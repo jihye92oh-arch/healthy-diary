@@ -1,6 +1,7 @@
 import { Recommendation, User, Goal, Season } from '../types';
 import { getCurrentSeason, getSeasonalIngredients } from '../utils/seasonUtils';
 import { getMenusBySeason, getMenusByCalories, getRandomMenus, FoodMenu } from '../data/foodDatabase';
+import { exerciseDatabase, calculateCaloriesByWeight, ExerciseData } from '../data/exerciseDatabase';
 
 /**
  * FoodMenu를 Recommendation 형식으로 변환
@@ -75,6 +76,42 @@ export async function generateDietRecommendations(
 }
 
 /**
+ * ExerciseData를 Recommendation 형식으로 변환
+ */
+function convertExerciseToRecommendation(
+  exercise: ExerciseData,
+  user: User | null,
+  duration: number
+): Recommendation {
+  const userWeight = user?.weight || 70; // 기본 70kg
+  const calories = calculateCaloriesByWeight(exercise.met, userWeight, duration);
+
+  const difficultyMap: { [key: string]: 'easy' | 'medium' | 'hard' } = {
+    '쉬움': 'easy',
+    '보통': 'medium',
+    '어려움': 'hard',
+  };
+
+  return {
+    id: exercise.id,
+    type: 'exercise',
+    title: exercise.name,
+    description: exercise.description,
+    calories,
+    duration,
+    difficulty: difficultyMap[exercise.difficulty],
+  };
+}
+
+/**
+ * 배열에서 랜덤하게 N개 선택
+ */
+function getRandomItems<T>(array: T[], count: number): T[] {
+  const shuffled = [...array].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, count);
+}
+
+/**
  * AI 기반 운동 추천
  *
  * @param user 사용자 정보
@@ -91,86 +128,68 @@ export async function generateExerciseRecommendations(
   const currentSeason = season || getCurrentSeason();
 
   // 사용자 활동 수준에 따른 난이도 조정
-  const difficulty = user?.activityLevel === 'sedentary' || user?.activityLevel === 'light'
-    ? 'easy'
+  const userDifficulty = user?.activityLevel === 'sedentary' || user?.activityLevel === 'light'
+    ? '쉬움'
     : user?.activityLevel === 'very_active'
-    ? 'hard'
-    : 'medium';
+    ? '어려움'
+    : '보통';
 
-  // Mock 추천
-  const indoorExercises: Recommendation[] = [
-    {
-      id: '1',
-      type: 'exercise',
-      title: '홈 트레이닝 (스쿼트, 플랭크, 버피)',
-      description: '집에서 쉽게 할 수 있는 전신 운동',
-      calories: 250,
-      duration: 30,
-      difficulty,
-    },
-    {
-      id: '2',
-      type: 'exercise',
-      title: '요가 (초급)',
-      description: '유연성과 근력을 동시에 기르는 요가',
-      calories: 180,
-      duration: 40,
-      difficulty: 'easy',
-    },
-    {
-      id: '3',
-      type: 'exercise',
-      title: '실내 자전거',
-      description: '유산소 운동의 정석, 실내 자전거',
-      calories: 300,
-      duration: 30,
-      difficulty: 'medium',
-    },
-  ];
+  let availableExercises: ExerciseData[];
 
-  const outdoorExercises: Recommendation[] = currentSeason === 'winter'
-    ? [
-        {
-          id: '4',
-          type: 'exercise',
-          title: '가벼운 산책',
-          description: '날씨가 좋은 날 20분 산책',
-          calories: 120,
-          duration: 20,
-          difficulty: 'easy',
-        },
-        {
-          id: '5',
-          type: 'exercise',
-          title: '겨울 등산',
-          description: '따뜻한 옷을 입고 가까운 산 오르기',
-          calories: 400,
-          duration: 60,
-          difficulty: 'medium',
-        },
-      ]
-    : [
-        {
-          id: '4',
-          type: 'exercise',
-          title: '조깅',
-          description: '공원이나 운동장에서 30분 조깅',
-          calories: 300,
-          duration: 30,
-          difficulty: 'medium',
-        },
-        {
-          id: '5',
-          type: 'exercise',
-          title: '등산',
-          description: '주말에 가까운 산 등반',
-          calories: 450,
-          duration: 60,
-          difficulty: 'hard',
-        },
-      ];
+  if (isIndoor) {
+    // 실내 운동: 근력, 요가, 필라테스 등
+    availableExercises = exerciseDatabase.filter(ex =>
+      ex.category === '근력' ||
+      ex.category === '기타' ||
+      (ex.category === '유산소' && ['줄넘기', '에어로빅'].includes(ex.name))
+    );
+  } else {
+    // 실외 운동: 유산소, 스포츠 위주
+    if (currentSeason === 'winter') {
+      // 겨울: 가벼운 유산소 위주 (걷기, 등산 등)
+      availableExercises = exerciseDatabase.filter(ex =>
+        ['걷기 (느린 속도)', '걷기 (빠른 속도)', '등산', '조깅'].includes(ex.name)
+      );
+    } else {
+      // 다른 계절: 다양한 실외 활동
+      availableExercises = exerciseDatabase.filter(ex =>
+        ex.category === '유산소' || ex.category === '스포츠'
+      );
+    }
+  }
 
-  return isIndoor ? indoorExercises : outdoorExercises;
+  // 난이도 필터링 (사용자 난이도와 한 단계 차이까지 허용)
+  const difficultyLevels: { [key: string]: number } = {
+    '쉬움': 1,
+    '보통': 2,
+    '어려움': 3,
+  };
+  const userLevel = difficultyLevels[userDifficulty];
+
+  const filteredExercises = availableExercises.filter(ex => {
+    const exLevel = difficultyLevels[ex.difficulty];
+    return Math.abs(exLevel - userLevel) <= 1; // ±1 단계 허용
+  });
+
+  // 최소 3개 이상 확보
+  const finalExercises = filteredExercises.length >= 3
+    ? filteredExercises
+    : availableExercises;
+
+  // 랜덤하게 3개 선택
+  const selectedExercises = getRandomItems(finalExercises, 3);
+
+  // 운동 시간 설정 (난이도에 따라)
+  const durations = selectedExercises.map(ex => {
+    if (ex.difficulty === '쉬움') return 40;
+    if (ex.difficulty === '어려움') return 20;
+    return 30;
+  });
+
+  // Recommendation 형식으로 변환
+  return selectedExercises.map((ex, idx) =>
+    convertExerciseToRecommendation(ex, user, durations[idx])
+  );
 }
 
 /**
