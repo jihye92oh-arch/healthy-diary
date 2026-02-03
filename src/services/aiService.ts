@@ -1,5 +1,28 @@
 import { Recommendation, User, Goal, Season } from '../types';
 import { getCurrentSeason, getSeasonalIngredients } from '../utils/seasonUtils';
+import { getMenusBySeason, getMenusByCalories, getRandomMenus, FoodMenu } from '../data/foodDatabase';
+
+/**
+ * FoodMenu를 Recommendation 형식으로 변환
+ */
+function convertMenuToRecommendation(menu: FoodMenu): Recommendation {
+  return {
+    id: menu.id,
+    type: 'diet',
+    title: menu.name,
+    description: menu.description || `${menu.category} 메뉴로 ${menu.calories}kcal`,
+    calories: menu.calories,
+    ingredients: menu.ingredients,
+    difficulty: menu.difficulty === '쉬움' ? 'easy' : menu.difficulty === '어려움' ? 'hard' : 'medium',
+    cookingSteps: menu.cookingSteps,
+    cookingTime: menu.cookingTime,
+    nutrients: {
+      protein: menu.protein,
+      carbs: menu.carbs,
+      fat: menu.fat,
+    },
+  };
+}
 
 /**
  * AI 기반 식단 추천
@@ -14,49 +37,41 @@ export async function generateDietRecommendations(
   season?: Season
 ): Promise<Recommendation[]> {
   const currentSeason = season || getCurrentSeason();
-  const seasonalIngredients = getSeasonalIngredients(currentSeason);
 
   // 목표 칼로리 기준
   const targetCalories = goal?.dailyCalorieGoal || 2000;
   const mealCalories = Math.round(targetCalories / 3); // 1끼 기준
 
-  // Mock 추천 (실제로는 Claude API 호출)
-  const recommendations: Recommendation[] = [
-    {
-      id: '1',
-      type: 'diet',
-      title: currentSeason === 'winter' ? '따뜻한 된장찌개 정식' : '제철 샐러드 볼',
-      description: currentSeason === 'winter'
-        ? '추운 겨울, 몸을 따뜻하게 하는 된장찌개와 현미밥, 김치'
-        : '신선한 제철 채소로 만든 영양 가득 샐러드',
-      calories: mealCalories,
-      ingredients: currentSeason === 'winter'
-        ? ['된장', '두부', '호박', '감자', '버섯', '현미밥', '김치']
-        : seasonalIngredients.slice(0, 6),
-    },
-    {
-      id: '2',
-      type: 'diet',
-      title: '닭가슴살 샐러드',
-      description: '고단백 저칼로리 식단의 대표 메뉴',
-      calories: Math.round(mealCalories * 0.8),
-      ingredients: ['닭가슴살', '양상추', '토마토', '오이', '올리브유', '발사믹 식초'],
-    },
-    {
-      id: '3',
-      type: 'diet',
-      title: currentSeason === 'winter' ? '뿌리채소 볶음밥' : '비빔밥',
-      description: currentSeason === 'winter'
-        ? '뿌리채소로 영양을 채운 건강한 볶음밥'
-        : '다양한 나물과 고추장으로 비빈 영양 만점 비빔밥',
-      calories: mealCalories,
-      ingredients: currentSeason === 'winter'
-        ? ['현미', '무', '당근', '우엉', '달걀', '참기름']
-        : ['현미밥', '시금치', '콩나물', '고사리', '달걀', '고추장'],
-    },
-  ];
+  // 계절 맵핑
+  const seasonMap: { [key: string]: string } = {
+    spring: '봄',
+    summer: '여름',
+    fall: '가을',
+    winter: '겨울',
+  };
 
-  return recommendations;
+  // 1. 계절에 맞는 메뉴 가져오기
+  const seasonalMenus = getMenusBySeason(seasonMap[currentSeason]);
+
+  // 2. 칼로리 범위에 맞는 메뉴 필터링 (1끼 기준: ±200kcal)
+  const calorieFilteredMenus = seasonalMenus.filter(
+    menu => menu.calories >= mealCalories - 200 && menu.calories <= mealCalories + 200
+  );
+
+  // 3. 메뉴가 충분하지 않으면 전체 메뉴에서 칼로리 기준으로 선택
+  const selectedMenus = calorieFilteredMenus.length >= 3
+    ? getRandomMenus(3, undefined).filter(
+        menu => calorieFilteredMenus.some(cm => cm.id === menu.id)
+      )
+    : getMenusByCalories(mealCalories - 200, mealCalories + 200).slice(0, 3);
+
+  // 4. 최종적으로 3개 미만이면 랜덤으로 채우기
+  const finalMenus = selectedMenus.length >= 3
+    ? selectedMenus.slice(0, 3)
+    : [...selectedMenus, ...getRandomMenus(3 - selectedMenus.length)];
+
+  // 5. Recommendation 형식으로 변환
+  return finalMenus.map(convertMenuToRecommendation);
 }
 
 /**

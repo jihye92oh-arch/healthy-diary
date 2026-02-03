@@ -404,15 +404,56 @@ export default function Recommendations() {
         >
           <div className="space-y-4">
             <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-              <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+              <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
                 {selectedRecipe.description}
               </p>
-              <div className="flex justify-between items-center mt-3">
-                <span className="text-lg font-bold text-green-600 dark:text-green-400">
-                  {selectedRecipe.calories} kcal
-                </span>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">칼로리:</span>
+                  <span className="font-bold text-green-600 dark:text-green-400">
+                    {selectedRecipe.calories} kcal
+                  </span>
+                </div>
+                {selectedRecipe.cookingTime && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">조리 시간:</span>
+                    <span className="font-bold text-gray-800 dark:text-gray-200">
+                      {selectedRecipe.cookingTime}분
+                    </span>
+                  </div>
+                )}
+                {selectedRecipe.difficulty && (
+                  <div className="flex justify-between col-span-2">
+                    <span className="text-gray-600 dark:text-gray-400">난이도:</span>
+                    <span className="font-bold text-gray-800 dark:text-gray-200">
+                      {selectedRecipe.difficulty === 'easy' && '⭐ 쉬움'}
+                      {selectedRecipe.difficulty === 'medium' && '⭐⭐ 보통'}
+                      {selectedRecipe.difficulty === 'hard' && '⭐⭐⭐ 어려움'}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
+
+            {selectedRecipe.nutrients && (
+              <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">🥗 영양 정보</h4>
+                <div className="grid grid-cols-3 gap-2 text-sm text-center">
+                  <div>
+                    <p className="text-gray-600 dark:text-gray-400">단백질</p>
+                    <p className="font-bold text-blue-600 dark:text-blue-400">{selectedRecipe.nutrients.protein}g</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600 dark:text-gray-400">탄수화물</p>
+                    <p className="font-bold text-orange-600 dark:text-orange-400">{selectedRecipe.nutrients.carbs}g</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600 dark:text-gray-400">지방</p>
+                    <p className="font-bold text-red-600 dark:text-red-400">{selectedRecipe.nutrients.fat}g</p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {selectedRecipe.ingredients && (
               <div>
@@ -430,12 +471,23 @@ export default function Recommendations() {
 
             <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
               <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">👨‍🍳 조리 방법</h4>
-              <ol className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
-                <li>1. 재료를 깨끗이 씻어 준비합니다.</li>
-                <li>2. 각 재료를 적당한 크기로 손질합니다.</li>
-                <li>3. 레시피에 따라 조리합니다.</li>
-                <li>4. 맛있게 드세요!</li>
-              </ol>
+              {selectedRecipe.cookingSteps && selectedRecipe.cookingSteps.length > 0 ? (
+                <ol className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
+                  {selectedRecipe.cookingSteps.map((step, idx) => (
+                    <li key={idx} className="flex items-start">
+                      <span className="font-bold mr-2 text-green-600 dark:text-green-400">{idx + 1}.</span>
+                      <span>{step}</span>
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <ol className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
+                  <li>1. 재료를 깨끗이 씻어 준비합니다.</li>
+                  <li>2. 각 재료를 적당한 크기로 손질합니다.</li>
+                  <li>3. 레시피에 따라 조리합니다.</li>
+                  <li>4. 맛있게 드세요!</li>
+                </ol>
+              )}
             </div>
 
             <div className="flex space-x-2 pt-4">

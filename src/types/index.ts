@@ -138,4 +138,11 @@ export interface Recommendation {
   ingredients?: string[];
   duration?: number;
   difficulty?: 'easy' | 'medium' | 'hard';
+  cookingSteps?: string[]; // 조리 방법
+  cookingTime?: number; // 조리 시간 (분)
+  nutrients?: {
+    protein: number;
+    carbs: number;
+    fat: number;
+  };
 }
