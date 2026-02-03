@@ -1,0 +1,220 @@
+import { Recommendation, User, Goal, Season } from '../types';
+import { getCurrentSeason, getSeasonalIngredients } from '../utils/seasonUtils';
+
+/**
+ * AI 기반 식단 추천
+ *
+ * @param user 사용자 정보
+ * @param goal 목표 정보
+ * @param season 계절 (선택사항, 기본값: 현재 계절)
+ */
+export async function generateDietRecommendations(
+  user: User | null,
+  goal: Goal | null,
+  season?: Season
+): Promise<Recommendation[]> {
+  const currentSeason = season || getCurrentSeason();
+  const seasonalIngredients = getSeasonalIngredients(currentSeason);
+
+  // 목표 칼로리 기준
+  const targetCalories = goal?.dailyCalorieGoal || 2000;
+  const mealCalories = Math.round(targetCalories / 3); // 1끼 기준
+
+  // Mock 추천 (실제로는 Claude API 호출)
+  const recommendations: Recommendation[] = [
+    {
+      id: '1',
+      type: 'diet',
+      title: currentSeason === 'winter' ? '따뜻한 된장찌개 정식' : '제철 샐러드 볼',
+      description: currentSeason === 'winter'
+        ? '추운 겨울, 몸을 따뜻하게 하는 된장찌개와 현미밥, 김치'
+        : '신선한 제철 채소로 만든 영양 가득 샐러드',
+      calories: mealCalories,
+      ingredients: currentSeason === 'winter'
+        ? ['된장', '두부', '호박', '감자', '버섯', '현미밥', '김치']
+        : seasonalIngredients.slice(0, 6),
+    },
+    {
+      id: '2',
+      type: 'diet',
+      title: '닭가슴살 샐러드',
+      description: '고단백 저칼로리 식단의 대표 메뉴',
+      calories: Math.round(mealCalories * 0.8),
+      ingredients: ['닭가슴살', '양상추', '토마토', '오이', '올리브유', '발사믹 식초'],
+    },
+    {
+      id: '3',
+      type: 'diet',
+      title: currentSeason === 'winter' ? '뿌리채소 볶음밥' : '비빔밥',
+      description: currentSeason === 'winter'
+        ? '뿌리채소로 영양을 채운 건강한 볶음밥'
+        : '다양한 나물과 고추장으로 비빈 영양 만점 비빔밥',
+      calories: mealCalories,
+      ingredients: currentSeason === 'winter'
+        ? ['현미', '무', '당근', '우엉', '달걀', '참기름']
+        : ['현미밥', '시금치', '콩나물', '고사리', '달걀', '고추장'],
+    },
+  ];
+
+  return recommendations;
+}
+
+/**
+ * AI 기반 운동 추천
+ *
+ * @param user 사용자 정보
+ * @param goal 목표 정보
+ * @param season 계절
+ * @param isIndoor 실내 운동 여부
+ */
+export async function generateExerciseRecommendations(
+  user: User | null,
+  goal: Goal | null,
+  season?: Season,
+  isIndoor: boolean = true
+): Promise<Recommendation[]> {
+  const currentSeason = season || getCurrentSeason();
+
+  // 사용자 활동 수준에 따른 난이도 조정
+  const difficulty = user?.activityLevel === 'sedentary' || user?.activityLevel === 'light'
+    ? 'easy'
+    : user?.activityLevel === 'very_active'
+    ? 'hard'
+    : 'medium';
+
+  // Mock 추천
+  const indoorExercises: Recommendation[] = [
+    {
+      id: '1',
+      type: 'exercise',
+      title: '홈 트레이닝 (스쿼트, 플랭크, 버피)',
+      description: '집에서 쉽게 할 수 있는 전신 운동',
+      calories: 250,
+      duration: 30,
+      difficulty,
+    },
+    {
+      id: '2',
+      type: 'exercise',
+      title: '요가 (초급)',
+      description: '유연성과 근력을 동시에 기르는 요가',
+      calories: 180,
+      duration: 40,
+      difficulty: 'easy',
+    },
+    {
+      id: '3',
+      type: 'exercise',
+      title: '실내 자전거',
+      description: '유산소 운동의 정석, 실내 자전거',
+      calories: 300,
+      duration: 30,
+      difficulty: 'medium',
+    },
+  ];
+
+  const outdoorExercises: Recommendation[] = currentSeason === 'winter'
+    ? [
+        {
+          id: '4',
+          type: 'exercise',
+          title: '가벼운 산책',
+          description: '날씨가 좋은 날 20분 산책',
+          calories: 120,
+          duration: 20,
+          difficulty: 'easy',
+        },
+        {
+          id: '5',
+          type: 'exercise',
+          title: '겨울 등산',
+          description: '따뜻한 옷을 입고 가까운 산 오르기',
+          calories: 400,
+          duration: 60,
+          difficulty: 'medium',
+        },
+      ]
+    : [
+        {
+          id: '4',
+          type: 'exercise',
+          title: '조깅',
+          description: '공원이나 운동장에서 30분 조깅',
+          calories: 300,
+          duration: 30,
+          difficulty: 'medium',
+        },
+        {
+          id: '5',
+          type: 'exercise',
+          title: '등산',
+          description: '주말에 가까운 산 등반',
+          calories: 450,
+          duration: 60,
+          difficulty: 'hard',
+        },
+      ];
+
+  return isIndoor ? indoorExercises : outdoorExercises;
+}
+
+/**
+ * AI 맞춤 조언 생성
+ *
+ * @param user 사용자 정보
+ * @param goal 목표 정보
+ * @param recentCalories 최근 칼로리 섭취량
+ * @param recentExercise 최근 운동 빈도
+ */
+export async function generatePersonalizedAdvice(
+  user: User | null,
+  goal: Goal | null,
+  recentCalories?: number,
+  recentExercise?: number
+): Promise<string[]> {
+  const advice: string[] = [];
+
+  // 칼로리 섭취 분석
+  if (recentCalories && goal) {
+    const diff = recentCalories - goal.dailyCalorieGoal;
+    if (diff > 300) {
+      advice.push(
+        `최근 목표보다 ${Math.round(diff)}kcal 더 섭취했습니다. 저녁 식사량을 조금 줄여보세요.`
+      );
+    } else if (diff < -300) {
+      advice.push(
+        `목표보다 ${Math.abs(Math.round(diff))}kcal 적게 섭취하고 있습니다. 너무 무리한 다이어트는 건강에 해로울 수 있어요.`
+      );
+    } else {
+      advice.push('목표 칼로리를 잘 지키고 있습니다. 계속 이 페이스를 유지하세요!');
+    }
+  }
+
+  // 운동 빈도 분석
+  if (recentExercise !== undefined && goal) {
+    if (recentExercise < goal.weeklyExerciseGoal) {
+      advice.push(
+        `이번 주 운동 ${recentExercise}회로 목표에 조금 부족합니다. ${
+          goal.weeklyExerciseGoal - recentExercise
+        }회 더 운동하면 목표 달성!`
+      );
+    } else {
+      advice.push('주간 운동 목표를 달성했습니다! 훌륭해요! 💪');
+    }
+  }
+
+  // 계절별 조언
+  const season = getCurrentSeason();
+  if (season === 'winter') {
+    advice.push('겨울철에는 따뜻한 국물 요리와 뿌리채소로 체온을 유지하세요.');
+    advice.push('추운 날씨에는 홈트레이닝으로 꾸준히 운동하는 것이 중요합니다.');
+  } else if (season === 'summer') {
+    advice.push('더운 여름, 수분 섭취를 충분히 하세요. 하루 2L 이상 물을 마시세요.');
+  } else if (season === 'spring') {
+    advice.push('봄나물로 비타민을 보충하고, 야외 활동을 늘려보세요.');
+  } else {
+    advice.push('가을은 운동하기 좋은 계절입니다. 등산이나 트레킹을 추천합니다.');
+  }
+
+  return advice;
+}
