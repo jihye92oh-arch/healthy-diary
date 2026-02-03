@@ -20,6 +20,7 @@ import {
   addWeightLog as addWeightLogToStorage,
   loadWaterLogs,
   addWaterLog as addWaterLogToStorage,
+  removeWaterLog as removeWaterLogFromStorage,
 } from '../services/storageService';
 
 interface AppContextType {
@@ -35,6 +36,7 @@ interface AppContextType {
   addWeightLog: (log: WeightLog) => void;
   waterLogs: WaterLog[];
   addWaterLog: (log: WaterLog) => void;
+  removeWaterLog: (date: Date) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -94,6 +96,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setWaterLogs(updated);
   };
 
+  const removeWaterLog = (date: Date) => {
+    const updated = removeWaterLogFromStorage(date);
+    setWaterLogs(updated);
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -109,6 +116,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         addWeightLog,
         waterLogs,
         addWaterLog,
+        removeWaterLog,
       }}
     >
       {children}

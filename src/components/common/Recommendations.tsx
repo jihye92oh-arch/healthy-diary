@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useApp } from '../../contexts/AppContext';
-import { Recommendation, WeatherInfo } from '../../types';
+import { Recommendation, WeatherInfo, DietRecord, ExerciseLog, FoodItem } from '../../types';
 import {
   generateDietRecommendations,
   generateExerciseRecommendations,
@@ -17,9 +17,10 @@ import {
   shouldRecommendOutdoorExercise,
   getWeatherEmoji,
 } from '../../services/weatherService';
+import Modal from './Modal';
 
 export default function Recommendations() {
-  const { user, goal } = useApp();
+  const { user, goal, addDietRecord, addExerciseLog } = useApp();
   const [dietRecs, setDietRecs] = useState<Recommendation[]>([]);
   const [exerciseRecs, setExerciseRecs] = useState<Recommendation[]>([]);
   const [aiAdvice, setAiAdvice] = useState<string[]>([]);
@@ -30,6 +31,12 @@ export default function Recommendations() {
     recommend: boolean;
     reason: string;
   } | null>(null);
+
+  // 모달 상태
+  const [selectedRecipe, setSelectedRecipe] = useState<Recommendation | null>(null);
+  const [selectedExercise, setSelectedExercise] = useState<Recommendation | null>(null);
+  const [isRecipeModalOpen, setIsRecipeModalOpen] = useState(false);
+  const [isExerciseModalOpen, setIsExerciseModalOpen] = useState(false);
 
   const currentSeason = getCurrentSeason();
   const seasonName = getSeasonName(currentSeason);
@@ -78,6 +85,80 @@ export default function Recommendations() {
 
   const seasonalDietTips = getSeasonalDietTips(currentSeason);
   const seasonalExerciseTips = getSeasonalExerciseTips(currentSeason);
+
+  // 레시피 보기
+  const handleViewRecipe = (recipe: Recommendation) => {
+    setSelectedRecipe(recipe);
+    setIsRecipeModalOpen(true);
+  };
+
+  // 식단에 추가
+  const handleAddToDiet = (recipe: Recommendation) => {
+    if (!user) {
+      alert('사용자 정보를 먼저 설정해주세요.');
+      return;
+    }
+
+    // 추천 식단을 FoodItem 배열로 변환
+    const foods: FoodItem[] = recipe.ingredients
+      ? recipe.ingredients.map((ingredient, idx) => ({
+          id: `${Date.now()}-${idx}`,
+          name: ingredient,
+          amount: 100, // 기본값
+          unit: 'g' as const,
+          calories: Math.round((recipe.calories || 0) / recipe.ingredients!.length),
+        }))
+      : [
+          {
+            id: Date.now().toString(),
+            name: recipe.title,
+            amount: 1,
+            unit: 'ea' as const,
+            calories: recipe.calories || 0,
+          },
+        ];
+
+    const newRecord: DietRecord = {
+      id: Date.now().toString(),
+      userId: user.id,
+      date: new Date(),
+      mealType: 'lunch', // 기본값: 점심
+      foods,
+      totalCalories: recipe.calories || 0,
+      createdAt: new Date(),
+    };
+
+    addDietRecord(newRecord);
+    alert(`"${recipe.title}"이(가) 식단에 추가되었습니다! 기록 탭에서 확인하세요.`);
+  };
+
+  // 운동 상세 보기
+  const handleViewExercise = (exercise: Recommendation) => {
+    setSelectedExercise(exercise);
+    setIsExerciseModalOpen(true);
+  };
+
+  // 운동 시작 (기록에 추가)
+  const handleStartExercise = (exercise: Recommendation) => {
+    if (!user) {
+      alert('사용자 정보를 먼저 설정해주세요.');
+      return;
+    }
+
+    const newLog: ExerciseLog = {
+      id: Date.now().toString(),
+      userId: user.id,
+      date: new Date(),
+      exerciseName: exercise.title,
+      durationMinutes: exercise.duration || 30,
+      caloriesBurned: exercise.calories || 0,
+      intensity: exercise.difficulty === 'easy' ? 'low' : exercise.difficulty === 'hard' ? 'high' : 'medium',
+      createdAt: new Date(),
+    };
+
+    addExerciseLog(newLog);
+    alert(`"${exercise.title}" 운동이 기록되었습니다! 기록 탭에서 확인하세요.`);
+  };
 
   if (loading) {
     return (
@@ -156,10 +237,16 @@ export default function Recommendations() {
                 )}
               </div>
               <div className="mt-3 flex space-x-2">
-                <button className="flex-1 text-sm bg-green-500 hover:bg-green-600 text-white py-2 rounded transition">
+                <button
+                  onClick={() => handleViewRecipe(rec)}
+                  className="flex-1 text-sm bg-green-500 hover:bg-green-600 text-white py-2 rounded transition"
+                >
                   레시피 보기
                 </button>
-                <button className="flex-1 text-sm bg-blue-500 hover:bg-blue-600 text-white py-2 rounded transition">
+                <button
+                  onClick={() => handleAddToDiet(rec)}
+                  className="flex-1 text-sm bg-blue-500 hover:bg-blue-600 text-white py-2 rounded transition"
+                >
                   식단 추가
                 </button>
               </div>
@@ -268,10 +355,16 @@ export default function Recommendations() {
                 </p>
               </div>
               <div className="mt-3 flex space-x-2">
-                <button className="flex-1 text-sm bg-purple-500 hover:bg-purple-600 text-white py-2 rounded transition">
+                <button
+                  onClick={() => handleViewExercise(rec)}
+                  className="flex-1 text-sm bg-purple-500 hover:bg-purple-600 text-white py-2 rounded transition"
+                >
                   상세 보기
                 </button>
-                <button className="flex-1 text-sm bg-blue-500 hover:bg-blue-600 text-white py-2 rounded transition">
+                <button
+                  onClick={() => handleStartExercise(rec)}
+                  className="flex-1 text-sm bg-blue-500 hover:bg-blue-600 text-white py-2 rounded transition"
+                >
                   운동 시작
                 </button>
               </div>
@@ -301,6 +394,144 @@ export default function Recommendations() {
           🔄 새로운 추천 받기
         </button>
       </div>
+
+      {/* 레시피 상세 모달 */}
+      {selectedRecipe && (
+        <Modal
+          isOpen={isRecipeModalOpen}
+          onClose={() => setIsRecipeModalOpen(false)}
+          title={`🥗 ${selectedRecipe.title}`}
+        >
+          <div className="space-y-4">
+            <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+              <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                {selectedRecipe.description}
+              </p>
+              <div className="flex justify-between items-center mt-3">
+                <span className="text-lg font-bold text-green-600 dark:text-green-400">
+                  {selectedRecipe.calories} kcal
+                </span>
+              </div>
+            </div>
+
+            {selectedRecipe.ingredients && (
+              <div>
+                <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">📝 재료</h4>
+                <ul className="space-y-1">
+                  {selectedRecipe.ingredients.map((ingredient, idx) => (
+                    <li key={idx} className="text-sm text-gray-700 dark:text-gray-300 flex items-center">
+                      <span className="mr-2">•</span>
+                      {ingredient}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+              <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">👨‍🍳 조리 방법</h4>
+              <ol className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
+                <li>1. 재료를 깨끗이 씻어 준비합니다.</li>
+                <li>2. 각 재료를 적당한 크기로 손질합니다.</li>
+                <li>3. 레시피에 따라 조리합니다.</li>
+                <li>4. 맛있게 드세요!</li>
+              </ol>
+            </div>
+
+            <div className="flex space-x-2 pt-4">
+              <button
+                onClick={() => {
+                  handleAddToDiet(selectedRecipe);
+                  setIsRecipeModalOpen(false);
+                }}
+                className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg transition font-medium"
+              >
+                식단에 추가
+              </button>
+              <button
+                onClick={() => setIsRecipeModalOpen(false)}
+                className="flex-1 bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500 text-gray-800 dark:text-gray-200 py-3 rounded-lg transition"
+              >
+                닫기
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* 운동 상세 모달 */}
+      {selectedExercise && (
+        <Modal
+          isOpen={isExerciseModalOpen}
+          onClose={() => setIsExerciseModalOpen(false)}
+          title={`💪 ${selectedExercise.title}`}
+        >
+          <div className="space-y-4">
+            <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+              <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
+                {selectedExercise.description}
+              </p>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">소모 칼로리:</span>
+                  <span className="font-bold text-purple-600 dark:text-purple-400">
+                    {selectedExercise.calories} kcal
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">운동 시간:</span>
+                  <span className="font-bold text-gray-800 dark:text-gray-200">
+                    {selectedExercise.duration}분
+                  </span>
+                </div>
+                <div className="flex justify-between col-span-2">
+                  <span className="text-gray-600 dark:text-gray-400">난이도:</span>
+                  <span className="font-bold text-gray-800 dark:text-gray-200">
+                    {selectedExercise.difficulty === 'easy' && '⭐ 쉬움'}
+                    {selectedExercise.difficulty === 'medium' && '⭐⭐ 보통'}
+                    {selectedExercise.difficulty === 'hard' && '⭐⭐⭐ 어려움'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">🎯 운동 방법</h4>
+              <ol className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
+                <li>1. 충분히 스트레칭으로 몸을 풀어줍니다.</li>
+                <li>2. 올바른 자세를 유지하며 운동합니다.</li>
+                <li>3. 호흡을 조절하며 일정한 페이스를 유지합니다.</li>
+                <li>4. 운동 후 쿨다운과 스트레칭을 잊지 마세요.</li>
+              </ol>
+            </div>
+
+            <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+              <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                <strong>⚠️ 주의사항:</strong> 무리하지 않고 본인의 체력에 맞게 운동하세요.
+                통증이 있다면 즉시 중단하고 전문가와 상담하세요.
+              </p>
+            </div>
+
+            <div className="flex space-x-2 pt-4">
+              <button
+                onClick={() => {
+                  handleStartExercise(selectedExercise);
+                  setIsExerciseModalOpen(false);
+                }}
+                className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg transition font-medium"
+              >
+                운동 시작
+              </button>
+              <button
+                onClick={() => setIsExerciseModalOpen(false)}
+                className="flex-1 bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500 text-gray-800 dark:text-gray-200 py-3 rounded-lg transition"
+              >
+                닫기
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

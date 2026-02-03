@@ -4,6 +4,7 @@ import DietLog from './components/diet/DietLog';
 import Analytics from './components/analytics/Analytics';
 import GoalSetting from './components/goal/GoalSetting';
 import Recommendations from './components/common/Recommendations';
+import Chatbot from './components/chatbot/Chatbot';
 import Settings from './components/settings/Settings';
 
 function App() {
@@ -19,6 +20,8 @@ function App() {
         return <GoalSetting />;
       case 'recommendation':
         return <Recommendations />;
+      case 'chatbot':
+        return <Chatbot />;
       case 'settings':
         return <Settings />;
       default:

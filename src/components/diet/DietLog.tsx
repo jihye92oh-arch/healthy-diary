@@ -5,7 +5,7 @@ import MealForm from './MealForm';
 import ExerciseForm from '../exercise/ExerciseForm';
 
 export default function DietLog() {
-  const { user, dietRecords, exerciseLogs, waterLogs, addWaterLog } = useApp();
+  const { user, dietRecords, exerciseLogs, waterLogs, addWaterLog, removeWaterLog } = useApp();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [waterGlasses, setWaterGlasses] = useState(0);
   const [isMealFormOpen, setIsMealFormOpen] = useState(false);
@@ -65,6 +65,12 @@ export default function DietLog() {
     };
 
     addWaterLog(newLog);
+  };
+
+  const handleRemoveWater = () => {
+    if (waterGlasses > 0) {
+      removeWaterLog(selectedDate);
+    }
   };
 
   const mealTypes: { type: MealType; label: string }[] = [
@@ -193,32 +199,83 @@ export default function DietLog() {
       </div>
 
       {/* 수분 섭취 */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+        <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4 flex items-center">
           <span className="mr-2">💧</span>
           수분 섭취
         </h2>
-        <div className="flex items-center space-x-2 mb-3">
+
+        {/* 물컵 표시 */}
+        <div className="flex items-center justify-center space-x-2 mb-4">
           {[...Array(8)].map((_, i) => (
-            <button
+            <div
               key={i}
-              onClick={handleAddWater}
-              className={`w-10 h-10 rounded-full text-2xl transition hover:scale-110 ${
-                i < waterGlasses ? 'opacity-100' : 'opacity-30'
+              className={`w-10 h-10 rounded-full text-2xl flex items-center justify-center transition ${
+                i < waterGlasses ? 'opacity-100 scale-110' : 'opacity-30'
               }`}
             >
               💧
-            </button>
+            </div>
           ))}
         </div>
-        <p className="text-sm text-gray-600">
-          {waterGlasses}잔 / 8잔 ({(waterGlasses * 250)}ml / 2000ml)
-        </p>
-        <div className="mt-3 bg-gray-200 rounded-full h-3">
+
+        {/* +/- 버튼 */}
+        <div className="flex items-center justify-center space-x-4 mb-4">
+          <button
+            onClick={handleRemoveWater}
+            disabled={waterGlasses === 0}
+            className="flex items-center justify-center w-12 h-12 bg-red-500 hover:bg-red-600 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed text-white rounded-full text-2xl font-bold transition shadow-md hover:shadow-lg"
+            title="물 제거 (250ml)"
+          >
+            −
+          </button>
+
+          <div className="text-center px-6">
+            <p className="text-3xl font-bold text-cyan-600 dark:text-cyan-400">
+              {waterGlasses}
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">잔</p>
+          </div>
+
+          <button
+            onClick={handleAddWater}
+            disabled={waterGlasses >= 8}
+            className="flex items-center justify-center w-12 h-12 bg-cyan-500 hover:bg-cyan-600 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed text-white rounded-full text-2xl font-bold transition shadow-md hover:shadow-lg"
+            title="물 추가 (250ml)"
+          >
+            +
+          </button>
+        </div>
+
+        {/* 정보 표시 */}
+        <div className="text-center mb-3">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            {waterGlasses}잔 / 8잔
+            <span className="mx-2">•</span>
+            {(waterGlasses * 250)}ml / 2,000ml
+          </p>
+        </div>
+
+        {/* 진행률 바 */}
+        <div className="bg-gray-200 dark:bg-gray-700 rounded-full h-4">
           <div
-            className="bg-cyan-500 h-3 rounded-full transition-all duration-300"
-            style={{ width: `${(waterGlasses / 8) * 100}%` }}
-          ></div>
+            className="bg-gradient-to-r from-cyan-400 to-blue-500 h-4 rounded-full transition-all duration-300 flex items-center justify-end pr-2"
+            style={{ width: `${Math.min(100, (waterGlasses / 8) * 100)}%` }}
+          >
+            {waterGlasses > 0 && (
+              <span className="text-xs text-white font-bold">
+                {Math.round((waterGlasses / 8) * 100)}%
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* 도움말 */}
+        <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+          <p className="text-xs text-blue-800 dark:text-blue-300">
+            💡 <strong>팁:</strong> 하루 8잔(2리터)의 물을 마시면 건강에 좋습니다.
+            한 잔은 약 250ml입니다.
+          </p>
         </div>
       </div>
     </div>

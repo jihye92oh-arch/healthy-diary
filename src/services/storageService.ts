@@ -148,6 +148,30 @@ export function addWaterLog(log: WaterLog): WaterLog[] {
   return logs;
 }
 
+export function removeWaterLog(date: Date): WaterLog[] {
+  const logs = loadWaterLogs();
+  const dateStr = date.toISOString().split('T')[0];
+
+  // Find the last water log for this date and remove it
+  const dateLogsIndices = logs
+    .map((log, index) => ({
+      log,
+      index,
+      logDate: new Date(log.date).toISOString().split('T')[0],
+    }))
+    .filter((item) => item.logDate === dateStr)
+    .map((item) => item.index);
+
+  if (dateLogsIndices.length > 0) {
+    // Remove the last one
+    const lastIndex = dateLogsIndices[dateLogsIndices.length - 1];
+    logs.splice(lastIndex, 1);
+    saveWaterLogs(logs);
+  }
+
+  return logs;
+}
+
 // Clear all data
 export function clearAllData(): void {
   Object.values(STORAGE_KEYS).forEach(key => {

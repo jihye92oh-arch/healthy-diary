@@ -1,6 +1,6 @@
 import { ReactNode, useState } from 'react';
 
-export type TabType = 'home' | 'log' | 'analytics' | 'goal' | 'recommendation' | 'settings';
+export type TabType = 'home' | 'log' | 'analytics' | 'goal' | 'recommendation' | 'chatbot' | 'settings';
 
 interface TabItem {
   id: TabType;
@@ -14,6 +14,7 @@ const tabs: TabItem[] = [
   { id: 'analytics', label: '분석', icon: '📊' },
   { id: 'goal', label: '목표', icon: '🎯' },
   { id: 'recommendation', label: '추천', icon: '💡' },
+  { id: 'chatbot', label: 'AI 챗봇', icon: '🤖' },
   { id: 'settings', label: '설정', icon: '⚙️' },
 ];
 
