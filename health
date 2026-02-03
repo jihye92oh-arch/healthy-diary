@@ -1,0 +1,288 @@
+1. 프로젝트 개요
+
+목적: 사용자의 건강한 다이어트 습관 형성을 돕는 개인 맞춤형 건강 관리 플랫폼
+주요 기능:
+
+식단/운동 기록 및 칼로리 자동 계산
+개인 목표 설정 및 진행률 트래킹
+AI 기반 계절별 맞춤 식단 추천
+날씨/계절 고려한 실내외 운동 추천
+주간/월간 건강 리포트 생성
+
+
+타겟 사용자: 건강한 다이어트를 원하는 20-40대 성인
+
+2. 프로젝트 구조
+healthy-diary/
+├── src/
+│   ├── components/
+│   │   ├── dashboard/          # 메인 대시보드
+│   │   ├── diet/               # 식단 관련 컴포넌트
+│   │   │   ├── MealLogger.tsx
+│   │   │   ├── CalorieTracker.tsx
+│   │   │   └── DietRecommendation.tsx
+│   │   ├── exercise/           # 운동 관련 컴포넌트
+│   │   │   ├── WorkoutLogger.tsx
+│   │   │   ├── ExerciseRecommendation.tsx
+│   │   │   └── SeasonalWorkout.tsx
+│   │   ├── goal/               # 목표 설정
+│   │   │   ├── GoalSetting.tsx
+│   │   │   └── ProgressChart.tsx
+│   │   └── common/             # 공통 컴포넌트
+│   ├── services/
+│   │   ├── calorieService.ts   # 칼로리 계산 로직
+│   │   ├── recommendationService.ts  # 추천 알고리즘
+│   │   ├── weatherService.ts   # 날씨 API 연동
+│   │   └── aiService.ts        # AI 추천 엔진
+│   ├── hooks/
+│   │   ├── useDietLog.ts
+│   │   ├── useExerciseLog.ts
+│   │   └── useGoalTracking.ts
+│   ├── utils/
+│   │   ├── dateHelper.ts
+│   │   ├── nutritionCalculator.ts
+│   │   └── seasonHelper.ts
+│   └── types/
+│       ├── diet.types.ts
+│       ├── exercise.types.ts
+│       └── user.types.ts
+├── public/
+│   └── food-database/          # 음식 영양 정보 DB
+├── tests/
+└── docs/
+주요 디렉토리 설명:
+
+components/diet: 식단 기록, 칼로리 추적, 계절별 추천 UI
+components/exercise: 운동 기록, 실내외 운동 추천 UI
+services: 비즈니스 로직 및 외부 API 연동
+hooks: 상태 관리 및 재사용 가능한 로직
+
+3. 기술 스택
+
+Frontend:
+
+React 18 + TypeScript 5.0
+Tailwind CSS (반응형 디자인)
+Recharts (차트 시각화)
+React Hook Form (폼 관리)
+
+
+Backend:
+
+Node.js 20 + Express
+Prisma ORM
+
+
+Database:
+
+PostgreSQL 15 (사용자 데이터, 기록)
+Redis (세션, 캐싱)
+
+
+External APIs:
+
+OpenWeatherMap API (날씨 정보)
+Anthropic Claude API (AI 추천)
+식품의약품안전처 API (영양 정보)
+
+
+DevOps:
+
+Docker
+GitHub Actions (CI/CD)
+
+
+
+4. 개발 가이드
+해야 할 것 (컨벤션)
+
+✅ 코드 스타일:
+
+ESLint + Prettier 설정 준수
+들여쓰기 2칸, 세미콜론 사용
+
+
+✅ 네이밍 규칙:
+
+컴포넌트: MealLogger.tsx (PascalCase)
+함수/변수: calculateCalories (camelCase)
+상수: MAX_DAILY_CALORIES (UPPER_SNAKE_CASE)
+타입/인터페이스: DietRecord, ExerciseLog (PascalCase)
+
+
+✅ 타입 정의:
+
+typescript  // 모든 데이터 구조에 타입 정의 필수
+  interface DietRecord {
+    id: string;
+    userId: string;
+    mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+    foods: FoodItem[];
+    totalCalories: number;
+    createdAt: Date;
+  }
+```
+  
+- ✅ **컴포넌트 구조**:
+  - 한 파일당 하나의 주요 컴포넌트
+  - Props는 인터페이스로 명시
+  - 복잡한 로직은 커스텀 훅으로 분리
+  
+- ✅ **데이터 검증**:
+  - 사용자 입력은 항상 프론트/백엔드 양쪽에서 검증
+  - Zod 스키마 사용
+  
+- ✅ **접근성**:
+  - 모든 폼 입력에 label 연결
+  - 키보드 네비게이션 지원
+  - ARIA 속성 적절히 사용
+  
+- ✅ **에러 처리**:
+  - Try-catch로 예외 처리
+  - 사용자에게 친화적인 에러 메시지 표시
+  
+- ✅ **성능 최적화**:
+  - React.memo, useMemo, useCallback 적절히 사용
+  - 이미지 lazy loading
+  - API 응답 캐싱 (React Query)
+
+### 하지 말아야 할 것
+
+- ❌ **절대 금지**:
+  - 민감 정보(API 키, 비밀번호) 하드코딩 금지
+  - 사용자 건강 데이터 로그 출력 금지
+  - any 타입 남발 금지
+  
+- ❌ **데이터 처리**:
+  - 칼로리 계산 시 반올림만 사용 (소수점 버림 금지)
+  - 음식 데이터베이스 직접 수정 금지 (migration 사용)
+  
+- ❌ **UI/UX**:
+  - 500줄 이상의 단일 컴포넌트 파일 생성 지양
+  - 인라인 스타일 사용 지양 (Tailwind 클래스 사용)
+  - 로딩 상태 없이 데이터 페칭 금지
+  
+- ❌ **비즈니스 로직**:
+  - BMR/TDEE 계산 공식 임의 변경 금지
+  - 의학적 조언 제공 금지 (일반적인 정보만)
+  
+- ❌ **성능**:
+  - useEffect 내 무한 루프 주의
+  - 대용량 데이터 한번에 렌더링 금지 (페이지네이션 사용)
+
+## 5. Data Flow
+
+### 전체 아키텍처
+```
+User → Frontend (React) → API Gateway → Backend Services → Database
+                              ↓
+                      External APIs (Weather, AI)
+```
+
+### 주요 플로우 설명
+
+#### 1. 식단 기록 플로우
+```
+사용자 식단 입력
+    ↓
+음식 검색 (자동완성)
+    ↓
+영양 정보 조회 (로컬 DB / 외부 API)
+    ↓
+칼로리 자동 계산
+    ↓
+일일 목표 대비 진행률 업데이트
+    ↓
+데이터베이스 저장
+    ↓
+대시보드 차트 실시간 갱신
+```
+
+#### 2. 운동 추천 플로우
+```
+사용자 프로필 조회 (목표, 체력 수준, 선호도)
+    ↓
+현재 계절/날씨 정보 조회 (OpenWeather API)
+    ↓
+AI 추천 엔진 호출 (Claude API)
+    ├─ 실내 운동 추천 (날씨 나쁨)
+    └─ 실외 운동 추천 (날씨 좋음)
+    ↓
+사용자 맞춤 운동 리스트 생성
+    ↓
+운동별 예상 소모 칼로리 계산
+    ↓
+UI 렌더링
+```
+
+#### 3. 계절별 식단 추천 플로우
+```
+현재 계절 파악 (2월 → 겨울/초봄)
+    ↓
+제철 식재료 데이터 조회
+    ↓
+사용자 목표 칼로리 확인
+    ↓
+알레르기/선호도 필터링
+    ↓
+AI 식단 조합 생성
+    ↓
+영양소 균형 검증
+    ↓
+3가지 옵션 제시 (고단백/저탄수/균형)
+```
+
+#### 4. 인증 및 데이터 보안 플로우
+```
+로그인 요청
+    ↓
+JWT 토큰 발급 (7일 유효)
+    ↓
+Redis에 세션 저장
+    ↓
+모든 API 요청에 토큰 검증
+    ↓
+사용자별 데이터 격리 (userId 기반 쿼리)
+```
+
+#### 5. 에러 처리 플로우
+```
+에러 발생
+    ↓
+에러 타입 분류 (네트워크/검증/서버)
+    ↓
+Global Error Handler
+    ├─ 네트워크 에러 → 재시도 로직
+    ├─ 검증 에러 → 사용자에게 안내
+    └─ 서버 에러 → 로그 기록 + 대체 UI
+    ↓
+사용자에게 친화적인 메시지 표시
+6. API 명세 예시
+식단 기록
+typescriptPOST /api/diet/log
+Request:
+{
+  "mealType": "lunch",
+  "foods": [
+    { "name": "현미밥", "amount": 150, "unit": "g" },
+    { "name": "닭가슴살", "amount": 100, "unit": "g" }
+  ]
+}
+
+Response:
+{
+  "success": true,
+  "data": {
+    "totalCalories": 450,
+    "nutrients": { "protein": 35, "carbs": 65, "fat": 5 },
+    "dailyProgress": 65
+  }
+}
+7. 계절별 추천 기준
+겨울/초봄 (1-3월) - 현재 계절
+
+식단: 따뜻한 국물 요리, 뿌리채소, 제철 과일 (딸기, 한라봉)
+운동:
+
+실내: 홈트레이닝, 요가, 실내 자전거
+실외: 가벼운 산책, 계단 오르기 (날씨 좋은 날)

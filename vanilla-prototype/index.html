@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="건강한 다이어트 습관 형성을 돕는 개인 맞춤형 건강 관리 플랫폼">
+  <title>Healthy Diary - 건강 관리 플랫폼</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- 헤더 -->
+  <header class="header">
+    <div class="container">
+      <h1 class="app-title">🥗 Healthy Diary</h1>
+      <p class="current-date" id="currentDate"></p>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- 목표 설정 영역 -->
+    <section class="card goal-section">
+      <h2 class="section-title">일일 목표 설정</h2>
+      <div class="goal-form">
+        <label for="dailyGoalInput" class="form-label">
+          목표 칼로리 (kcal)
+        </label>
+        <div class="input-group">
+          <input
+            type="number"
+            id="dailyGoalInput"
+            class="input-field"
+            min="500"
+            max="5000"
+            step="50"
+            placeholder="2000"
+            aria-label="일일 목표 칼로리"
+          >
+          <button type="button" id="setGoalBtn" class="btn btn-primary">
+            목표 설정
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 진행률 대시보드 -->
+    <section class="card dashboard">
+      <h2 class="section-title">오늘의 진행률</h2>
+
+      <div class="stats-grid">
+        <div class="stat-card stat-consumed">
+          <div class="stat-label">섭취 칼로리</div>
+          <div class="stat-value" id="consumedCalories">0</div>
+          <div class="stat-unit">kcal</div>
+        </div>
+
+        <div class="stat-card stat-burned">
+          <div class="stat-label">소모 칼로리</div>
+          <div class="stat-value" id="burnedCalories">0</div>
+          <div class="stat-unit">kcal</div>
+        </div>
+
+        <div class="stat-card stat-remaining">
+          <div class="stat-label">남은 칼로리</div>
+          <div class="stat-value" id="remainingCalories">2000</div>
+          <div class="stat-unit">kcal</div>
+        </div>
+      </div>
+
+      <div class="progress-section">
+        <div class="progress-info">
+          <span class="progress-label">목표 대비 진행률</span>
+          <span class="progress-percentage" id="progressPercentage">0%</span>
+        </div>
+        <div class="progress-bar-container">
+          <div class="progress-bar" id="progressBar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 기록 입력 영역 -->
+    <div class="forms-grid">
+      <!-- 식단 기록 폼 -->
+      <section class="card">
+        <h2 class="section-title">🍽️ 식단 기록</h2>
+        <form id="dietForm" class="record-form">
+          <div class="form-group">
+            <label for="mealType" class="form-label">식사 유형</label>
+            <select id="mealType" class="input-field" required>
+              <option value="breakfast">아침</option>
+              <option value="lunch">점심</option>
+              <option value="dinner">저녁</option>
+              <option value="snack">간식</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="foodName" class="form-label">음식명</label>
+            <input
+              type="text"
+              id="foodName"
+              class="input-field"
+              placeholder="예: 현미밥"
+              required
+              maxlength="50"
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="foodCalories" class="form-label">칼로리 (kcal)</label>
+            <input
+              type="number"
+              id="foodCalories"
+              class="input-field"
+              placeholder="300"
+              min="1"
+              max="2000"
+              required
+            >
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block">
+            식단 추가
+          </button>
+        </form>
+      </section>
+
+      <!-- 운동 기록 폼 -->
+      <section class="card">
+        <h2 class="section-title">💪 운동 기록</h2>
+        <form id="exerciseForm" class="record-form">
+          <div class="form-group">
+            <label for="exerciseName" class="form-label">운동명</label>
+            <input
+              type="text"
+              id="exerciseName"
+              class="input-field"
+              placeholder="예: 조깅 30분"
+              required
+              maxlength="50"
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="exerciseCalories" class="form-label">소모 칼로리 (kcal)</label>
+            <input
+              type="number"
+              id="exerciseCalories"
+              class="input-field"
+              placeholder="250"
+              min="1"
+              max="2000"
+              required
+            >
+          </div>
+
+          <button type="submit" class="btn btn-success btn-block">
+            운동 추가
+          </button>
+        </form>
+      </section>
+    </div>
+
+    <!-- 기록 목록 -->
+    <div class="lists-grid">
+      <!-- 식단 목록 -->
+      <section class="card">
+        <div class="list-header">
+          <h2 class="section-title">식단 목록</h2>
+          <span class="list-count" id="dietCount">0개</span>
+        </div>
+        <div id="dietList" class="record-list">
+          <p class="empty-message">아직 식단 기록이 없습니다.</p>
+        </div>
+      </section>
+
+      <!-- 운동 목록 -->
+      <section class="card">
+        <div class="list-header">
+          <h2 class="section-title">운동 목록</h2>
+          <span class="list-count" id="exerciseCount">0개</span>
+        </div>
+        <div id="exerciseList" class="record-list">
+          <p class="empty-message">아직 운동 기록이 없습니다.</p>
+        </div>
+      </section>
+    </div>
+
+    <!-- 데이터 초기화 -->
+    <section class="card reset-section">
+      <div class="reset-content">
+        <div>
+          <h3 class="reset-title">모든 데이터 초기화</h3>
+          <p class="reset-description">모든 기록과 설정을 삭제합니다. 이 작업은 되돌릴 수 없습니다.</p>
+        </div>
+        <button type="button" id="resetBtn" class="btn btn-danger">
+          초기화
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <!-- 푸터 -->
+  <footer class="footer">
+    <div class="container">
+      <p>&copy; 2026 Healthy Diary. 바닐라 JavaScript 프로토타입</p>
+    </div>
+  </footer>
+
+  <!-- 알림 컨테이너 -->
+  <div id="notificationContainer" class="notification-container" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
